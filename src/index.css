@@ -127,3 +127,12 @@
 @utility delay-300 { animation-delay: 300ms; }
 @utility delay-500 { animation-delay: 500ms; }
 
+@utility animate-wave-bar {
+  animation: wave-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes wave-pulse {
+  0% { transform: scaleY(0.3); }
+  100% { transform: scaleY(1.2); }
+}
+

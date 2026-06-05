@@ -90,6 +90,19 @@ function StatCard({ label, value, sub, accent, delay = 0 }: StatCardProps) {
   );
 }
 
+function VoiceWaveform({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <div className="flex items-center gap-0.5 h-3.5 px-1">
+      <div className="w-0.5 h-3 bg-red-500 dark:bg-red-400 rounded-full animate-wave-bar origin-bottom" style={{ animationDelay: "0.1s" }} />
+      <div className="w-0.5 h-4 bg-red-500 dark:bg-red-400 rounded-full animate-wave-bar origin-bottom" style={{ animationDelay: "0.3s" }} />
+      <div className="w-0.5 h-2 bg-red-500 dark:bg-red-400 rounded-full animate-wave-bar origin-bottom" style={{ animationDelay: "0.5s" }} />
+      <div className="w-0.5 h-5 bg-red-500 dark:bg-red-400 rounded-full animate-wave-bar origin-bottom" style={{ animationDelay: "0.2s" }} />
+      <div className="w-0.5 h-3 bg-red-500 dark:bg-red-400 rounded-full animate-wave-bar origin-bottom" style={{ animationDelay: "0.4s" }} />
+    </div>
+  );
+}
+
 export default function App() {
   const [tab, setTab] = useState("Dashboard");
   const [darkMode, setDarkMode] = useState(() => {
@@ -185,6 +198,27 @@ export default function App() {
       recognitionRefs.current[field] = rec;
       rec.start();
     }
+  };
+
+  const adjustEndTime = (mins: number) => {
+    let baseTime = form.start || "12:00";
+    if (form.end) {
+      baseTime = form.end;
+    }
+    const [h, m] = baseTime.split(":").map(Number);
+    const newDate = new Date();
+    newDate.setHours(h);
+    newDate.setMinutes(m + mins);
+    const hh = String(newDate.getHours()).padStart(2, "0");
+    const mm = String(newDate.getMinutes()).padStart(2, "0");
+    setForm(f => ({ ...f, end: `${hh}:${mm}` }));
+  };
+
+  const setEndTimeNow = () => {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    setForm(f => ({ ...f, end: `${hh}:${mm}` }));
   };
 
   // Load data from Supabase
@@ -501,11 +535,54 @@ export default function App() {
                 </div>
               </div>
 
+              {/* 10-Day Productivity Heatmap */}
+              {dayData.length > 0 && (
+                <div className="space-y-3 animate-scale-up opacity-0 border-t border-slate-200 dark:border-white/10 pt-4" style={{ animationDelay: "550ms" }}>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Activity Heatmap</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    {Array.from({length:10},(_,i)=>{
+                      const d=new Date(startDate); d.setDate(d.getDate()+i);
+                      const ds=d.toISOString().slice(0,10);
+                      const hrs=dayMap[ds]?.hrs||0;
+                      const alpha=Math.min(1,hrs/10);
+                      return (
+                        <div key={ds} className="flex flex-col items-center gap-1 transition-all duration-300 hover:scale-110">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-slate-900 dark:text-white" style={{background:`rgba(59,130,246,${0.05+alpha*0.95})`,border: darkMode ? `1px solid rgba(59,130,246,${0.1+alpha*0.3})` : `1px solid rgba(59,130,246,${0.2+alpha*0.3})`}}>
+                            {hrs>0?`${hrs.toFixed(1)}`:"—"}
+                          </div>
+                          <span className="text-[9px] text-slate-500 dark:text-slate-600 font-semibold">D{i+1}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Category Focus Breakdown */}
+              {catData.length > 0 && (
+                <div className="space-y-3 animate-scale-up opacity-0 border-t border-slate-200 dark:border-white/10 pt-4" style={{ animationDelay: "600ms" }}>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sprint Focus</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {catData.sort((a,b)=>b.hrs-a.hrs).slice(0, 4).map((c) => (
+                      <div key={c.name} className="p-2.5 bg-slate-100 dark:bg-white/3 rounded-xl border border-slate-200 dark:border-white/5 flex flex-col gap-1 hover:border-blue-500/20 transition-all duration-300 hover:scale-[1.01]">
+                        <div className="flex justify-between text-[10px] font-bold">
+                          <span className="text-slate-600 dark:text-slate-300 truncate">{c.name}</span>
+                          <span className="text-blue-600 dark:text-blue-400">{c.hrs}h</span>
+                        </div>
+                        <div className="h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-out" style={{width:`${(c.hrs/doneHrs)*100}%`}}/>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Recent Activities */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 animate-scale-up opacity-0" style={{ animationDelay: "550ms" }}>Latest Activities</h3>
+              <div className="space-y-3 border-t border-slate-200 dark:border-white/10 pt-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 animate-scale-up opacity-0" style={{ animationDelay: "650ms" }}>Latest Activities</h3>
                 {sessions.length === 0 ? (
-                  <p className="text-sm text-slate-400 dark:text-slate-500 italic animate-scale-up opacity-0" style={{ animationDelay: "600ms" }}>No work logged yet. The challenge is just beginning!</p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 italic animate-scale-up opacity-0" style={{ animationDelay: "700ms" }}>No work logged yet. The challenge is just beginning!</p>
                 ) : (
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {[...sessions].reverse().slice(0, 4).map((s, index) => (
@@ -713,9 +790,15 @@ export default function App() {
                 <label className="text-xs text-slate-500 dark:text-slate-400">Start Time</label>
                 <input type="time" value={form.start} onChange={e=>setForm(f=>({...f,start:e.target.value}))} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"/>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-xs text-slate-500 dark:text-slate-400">End Time</label>
                 <input type="time" value={form.end} onChange={e=>setForm(f=>({...f,end:e.target.value}))} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"/>
+                <div className="flex gap-1.5 pt-0.5">
+                  <button type="button" onClick={() => adjustEndTime(15)} className="bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-[10px] font-bold px-2 py-1 rounded-lg transition-all cursor-pointer hover:scale-105 duration-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5">+15m</button>
+                  <button type="button" onClick={() => adjustEndTime(30)} className="bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-[10px] font-bold px-2 py-1 rounded-lg transition-all cursor-pointer hover:scale-105 duration-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5">+30m</button>
+                  <button type="button" onClick={() => adjustEndTime(60)} className="bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-[10px] font-bold px-2 py-1 rounded-lg transition-all cursor-pointer hover:scale-105 duration-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5">+1h</button>
+                  <button type="button" onClick={setEndTimeNow} className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer hover:scale-105 duration-200 border border-blue-500/20">Now</button>
+                </div>
               </div>
               {form.start&&form.end&&<div className="sm:col-span-2 flex items-center gap-2 px-3 py-2 bg-blue-600/10 border border-blue-500/20 rounded-xl animate-scale-up">
                 <span className="text-xs text-slate-500 dark:text-slate-400">Duration:</span>
@@ -731,10 +814,11 @@ export default function App() {
                   <button 
                     type="button"
                     onClick={() => toggleSpeech("desc", (v) => setForm(f => ({ ...f, desc: v })), form.desc)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${activeListening.desc ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${activeListening.desc ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
                     title="Speak to type"
                   >
-                    <span>{activeListening.desc ? "🛑 Stop" : "🎙️ Speak"}</span>
+                    <VoiceWaveform active={activeListening.desc} />
+                    <span>{activeListening.desc ? "Listening..." : "🎙️ Speak"}</span>
                   </button>
                 </div>
                 <textarea rows={3} placeholder="e.g. Edited intro sequence, color graded outdoor scenes, synced audio to b-roll…" value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 placeholder-slate-400 dark:placeholder-slate-600 resize-none"/>
@@ -848,10 +932,11 @@ export default function App() {
                     <button 
                       type="button"
                       onClick={() => toggleSpeech("win", (v) => setRev("win", v), rev.win)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${activeListening.win ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${activeListening.win ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
                       title="Speak to type"
                     >
-                      <span>{activeListening.win ? "🛑 Stop" : "🎙️ Speak"}</span>
+                      <VoiceWaveform active={activeListening.win} />
+                      <span>{activeListening.win ? "Listening..." : "🎙️ Speak"}</span>
                     </button>
                   </div>
                   <input type="text" placeholder="What went really well?" value={rev.win} onChange={e=>setRev("win",e.target.value)} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-600"/>
@@ -862,10 +947,11 @@ export default function App() {
                     <button 
                       type="button"
                       onClick={() => toggleSpeech("distraction", (v) => setRev("distraction", v), rev.distraction)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${activeListening.distraction ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${activeListening.distraction ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
                       title="Speak to type"
                     >
-                      <span>{activeListening.distraction ? "🛑 Stop" : "🎙️ Speak"}</span>
+                      <VoiceWaveform active={activeListening.distraction} />
+                      <span>{activeListening.distraction ? "Listening..." : "🎙️ Speak"}</span>
                     </button>
                   </div>
                   <input type="text" placeholder="What got in the way?" value={rev.distraction} onChange={e=>setRev("distraction",e.target.value)} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-600"/>
@@ -881,10 +967,11 @@ export default function App() {
                     <button 
                       type="button"
                       onClick={() => toggleSpeech("notes", (v) => setRev("notes", v), rev.notes)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${activeListening.notes ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${activeListening.notes ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
                       title="Speak to type"
                     >
-                      <span>{activeListening.notes ? "🛑 Stop" : "🎙️ Speak"}</span>
+                      <VoiceWaveform active={activeListening.notes} />
+                      <span>{activeListening.notes ? "Listening..." : "🎙️ Speak"}</span>
                     </button>
                   </div>
                   <textarea rows={4} placeholder="Reflect on your work, learnings, ideas…" value={rev.notes} onChange={e=>setRev("notes",e.target.value)} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-600 resize-none"/>
