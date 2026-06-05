@@ -155,48 +155,96 @@ export default function App() {
 
   // Speech Recognition STT
   const recognitionRefs = useRef<{ [key: string]: any }>({});
+  const isListeningRef = useRef<{ [key: string]: boolean }>({});
   const [activeListening, setActiveListening] = useState<{ [key: string]: boolean }>({});
+  const valuesRef = useRef({ desc: "", notes: "", win: "", distraction: "" });
 
-  const toggleSpeech = (field: "desc" | "notes" | "win" | "distraction", updateFn: (val: string) => void, currentVal: string) => {
+  const currentNotes = dailyReviews[form.date]?.notes || "";
+  const currentWin = dailyReviews[form.date]?.win || "";
+  const currentDistraction = dailyReviews[form.date]?.distraction || "";
+
+  useEffect(() => {
+    valuesRef.current = {
+      desc: form.desc,
+      notes: currentNotes,
+      win: currentWin,
+      distraction: currentDistraction
+    };
+  }, [form.desc, currentNotes, currentWin, currentDistraction]);
+
+  const startSpeech = (field: "desc" | "notes" | "win" | "distraction", updateFn: (val: string) => void) => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Speech Recognition is not supported in your browser. Please try Google Chrome or Safari.");
       return;
     }
 
-    if (activeListening[field]) {
-      if (recognitionRefs.current[field]) {
-        recognitionRefs.current[field].stop();
-      }
-      setActiveListening(prev => ({ ...prev, [field]: false }));
-    } else {
-      const rec = new SpeechRecognition();
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.lang = "en-US";
+    isListeningRef.current[field] = true;
+    setActiveListening(prev => ({ ...prev, [field]: true }));
 
-      rec.onstart = () => {
-        setActiveListening(prev => ({ ...prev, [field]: true }));
-      };
+    const rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = false;
+    rec.lang = "en-US";
 
-      rec.onresult = (event: any) => {
-        const text = event.results[0][0].transcript;
-        if (text) {
-          updateFn(currentVal ? currentVal + " " + text : text);
+    rec.onstart = () => {
+      setActiveListening(prev => ({ ...prev, [field]: true }));
+    };
+
+    rec.onresult = (event: any) => {
+      let text = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          text += event.results[i][0].transcript;
         }
-      };
+      }
+      if (text) {
+        const latestVal = valuesRef.current[field];
+        updateFn(latestVal ? latestVal + " " + text.trim() : text.trim());
+      }
+    };
 
-      rec.onerror = (err: any) => {
-        console.error(err);
+    rec.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error === "not-allowed" || event.error === "service-not-allowed" || event.error === "audio-capture") {
+        isListeningRef.current[field] = false;
         setActiveListening(prev => ({ ...prev, [field]: false }));
-      };
+      }
+    };
 
-      rec.onend = () => {
+    rec.onend = () => {
+      if (isListeningRef.current[field]) {
+        setTimeout(() => {
+          if (isListeningRef.current[field]) {
+            startSpeech(field, updateFn);
+          }
+        }, 100);
+      } else {
         setActiveListening(prev => ({ ...prev, [field]: false }));
-      };
+      }
+    };
 
-      recognitionRefs.current[field] = rec;
+    recognitionRefs.current[field] = rec;
+    try {
       rec.start();
+    } catch (e) {
+      console.error("Failed to start speech recognition:", e);
+    }
+  };
+
+  const toggleSpeech = (field: "desc" | "notes" | "win" | "distraction", updateFn: (val: string) => void) => {
+    if (isListeningRef.current[field]) {
+      isListeningRef.current[field] = false;
+      setActiveListening(prev => ({ ...prev, [field]: false }));
+      if (recognitionRefs.current[field]) {
+        try {
+          recognitionRefs.current[field].stop();
+        } catch (e) {
+          console.error("Error stopping speech recognition:", e);
+        }
+      }
+    } else {
+      startSpeech(field, updateFn);
     }
   };
 
@@ -813,7 +861,7 @@ export default function App() {
                   <label className="text-xs text-slate-500 dark:text-slate-400">What did you work on?</label>
                   <button 
                     type="button"
-                    onClick={() => toggleSpeech("desc", (v) => setForm(f => ({ ...f, desc: v })), form.desc)}
+                    onClick={() => toggleSpeech("desc", (v) => setForm(f => ({ ...f, desc: v })))}
                     className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${activeListening.desc ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
                     title="Speak to type"
                   >
@@ -931,7 +979,7 @@ export default function App() {
                     <label className="text-xs text-slate-500 dark:text-slate-400">🏆 Biggest Win Today</label>
                     <button 
                       type="button"
-                      onClick={() => toggleSpeech("win", (v) => setRev("win", v), rev.win)}
+                      onClick={() => toggleSpeech("win", (v) => setRev("win", v))}
                       className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${activeListening.win ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
                       title="Speak to type"
                     >
@@ -946,7 +994,7 @@ export default function App() {
                     <label className="text-xs text-slate-500 dark:text-slate-400">⚠️ Biggest Distraction</label>
                     <button 
                       type="button"
-                      onClick={() => toggleSpeech("distraction", (v) => setRev("distraction", v), rev.distraction)}
+                      onClick={() => toggleSpeech("distraction", (v) => setRev("distraction", v))}
                       className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${activeListening.distraction ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
                       title="Speak to type"
                     >
@@ -966,7 +1014,7 @@ export default function App() {
                     <label className="text-xs text-slate-500 dark:text-slate-400">📝 Notes & Reflections</label>
                     <button 
                       type="button"
-                      onClick={() => toggleSpeech("notes", (v) => setRev("notes", v), rev.notes)}
+                      onClick={() => toggleSpeech("notes", (v) => setRev("notes", v))}
                       className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${activeListening.notes ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
                       title="Speak to type"
                     >
