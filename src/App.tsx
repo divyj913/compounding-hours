@@ -135,6 +135,53 @@ export default function App() {
   const timerRef = useRef<any>(null);
   const pomRef = useRef<any>(null);
 
+  // Speech Recognition STT
+  const recognitionRefs = useRef<{ [key: string]: any }>({});
+  const [activeListening, setActiveListening] = useState<{ [key: string]: boolean }>({});
+
+  const toggleSpeech = (field: "desc" | "notes" | "win" | "distraction", updateFn: (val: string) => void, currentVal: string) => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech Recognition is not supported in your browser. Please try Google Chrome or Safari.");
+      return;
+    }
+
+    if (activeListening[field]) {
+      if (recognitionRefs.current[field]) {
+        recognitionRefs.current[field].stop();
+      }
+      setActiveListening(prev => ({ ...prev, [field]: false }));
+    } else {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = "en-US";
+
+      rec.onstart = () => {
+        setActiveListening(prev => ({ ...prev, [field]: true }));
+      };
+
+      rec.onresult = (event: any) => {
+        const text = event.results[0][0].transcript;
+        if (text) {
+          updateFn(currentVal ? currentVal + " " + text : text);
+        }
+      };
+
+      rec.onerror = (err: any) => {
+        console.error(err);
+        setActiveListening(prev => ({ ...prev, [field]: false }));
+      };
+
+      rec.onend = () => {
+        setActiveListening(prev => ({ ...prev, [field]: false }));
+      };
+
+      recognitionRefs.current[field] = rec;
+      rec.start();
+    }
+  };
+
   // Load data from Supabase
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -674,7 +721,17 @@ export default function App() {
                 <input type="text" placeholder="e.g. Client Reel — Nike" value={form.project} onChange={e=>setForm(f=>({...f,project:e.target.value}))} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 placeholder-slate-400 dark:placeholder-slate-600"/>
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs text-slate-500 dark:text-slate-400">What did you work on?</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-slate-500 dark:text-slate-400">What did you work on?</label>
+                  <button 
+                    type="button"
+                    onClick={() => toggleSpeech("desc", (v) => setForm(f => ({ ...f, desc: v })), form.desc)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${activeListening.desc ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
+                    title="Speak to type"
+                  >
+                    <span>{activeListening.desc ? "🛑 Stop" : "🎙️ Speak"}</span>
+                  </button>
+                </div>
                 <textarea rows={3} placeholder="e.g. Edited intro sequence, color graded outdoor scenes, synced audio to b-roll…" value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 placeholder-slate-400 dark:placeholder-slate-600 resize-none"/>
               </div>
             </div>
@@ -781,11 +838,31 @@ export default function App() {
               <div className={`${glassCard} p-6 space-y-5 animate-scale-up opacity-0`} style={{ animationDelay: "180ms" }}>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Daily Review — {selDate}</h2>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-500 dark:text-slate-400">🏆 Biggest Win Today</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-slate-500 dark:text-slate-400">🏆 Biggest Win Today</label>
+                    <button 
+                      type="button"
+                      onClick={() => toggleSpeech("win", (v) => setRev("win", v), rev.win)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${activeListening.win ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
+                      title="Speak to type"
+                    >
+                      <span>{activeListening.win ? "🛑 Stop" : "🎙️ Speak"}</span>
+                    </button>
+                  </div>
                   <input type="text" placeholder="What went really well?" value={rev.win} onChange={e=>setRev("win",e.target.value)} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-600"/>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-500 dark:text-slate-400">⚠️ Biggest Distraction</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-slate-500 dark:text-slate-400">⚠️ Biggest Distraction</label>
+                    <button 
+                      type="button"
+                      onClick={() => toggleSpeech("distraction", (v) => setRev("distraction", v), rev.distraction)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${activeListening.distraction ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
+                      title="Speak to type"
+                    >
+                      <span>{activeListening.distraction ? "🛑 Stop" : "🎙️ Speak"}</span>
+                    </button>
+                  </div>
                   <input type="text" placeholder="What got in the way?" value={rev.distraction} onChange={e=>setRev("distraction",e.target.value)} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-600"/>
                 </div>
                 <div className="space-y-2">
@@ -794,7 +871,17 @@ export default function App() {
                   <div className="flex justify-between text-xs text-slate-400 dark:text-slate-600"><span>Exhausted</span><span>Peak Energy</span></div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-500 dark:text-slate-400">📝 Notes & Reflections</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-slate-500 dark:text-slate-400">📝 Notes & Reflections</label>
+                    <button 
+                      type="button"
+                      onClick={() => toggleSpeech("notes", (v) => setRev("notes", v), rev.notes)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${activeListening.notes ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse" : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5"}`}
+                      title="Speak to type"
+                    >
+                      <span>{activeListening.notes ? "🛑 Stop" : "🎙️ Speak"}</span>
+                    </button>
+                  </div>
                   <textarea rows={4} placeholder="Reflect on your work, learnings, ideas…" value={rev.notes} onChange={e=>setRev("notes",e.target.value)} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-600 resize-none"/>
                 </div>
               </div>
