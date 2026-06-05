@@ -2,57 +2,123 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ═══════════════════════════════════════════
+   DESIGN SYSTEM — CSS Custom Properties
+   8px grid · Monochrome + Blue Accent
+   ═══════════════════════════════════════════ */
+
+:root {
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Base Resets ─── */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.dark body {
+  background: #09090b;
+  color: #fafafa;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #27272a;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* ─── Focus States (Accessibility) ─── */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Selection ─── */
+::selection {
+  background: rgba(59, 130, 246, 0.2);
+  color: inherit;
+}
+
+/* ═══════════════════════════════════════════
+   UTILITY ANIMATIONS — Purposeful & Minimal
+   ═══════════════════════════════════════════ */
+
 @utility animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.3s var(--transition-base) forwards;
 }
 
 @utility animate-scale-up {
-  animation: scaleUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@utility animate-slide-in-right {
-  animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: scaleUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @utility animate-slide-up {
-  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@utility animate-pulse-slow {
-  animation: pulse-slow 10s ease-in-out infinite;
-}
-
-@utility animate-blob-1 {
-  animation: blob-1 22s ease-in-out infinite;
-}
-
-@utility animate-blob-2 {
-  animation: blob-2 28s ease-in-out infinite;
-}
-
-@utility animate-blob-3 {
-  animation: blob-3 25s ease-in-out infinite;
+@utility animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @utility animate-float {
-  animation: float 4s ease-in-out infinite;
+  animation: float 5s ease-in-out infinite;
 }
 
 @utility animate-shake {
   animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
 }
 
-@utility animate-glow-pulse {
-  animation: glow-pulse 2s ease-in-out infinite;
-}
-
-@utility animate-glow-pulse-orange {
-  animation: glow-pulse-orange 2s ease-in-out infinite;
+@utility animate-pulse-ring {
+  animation: pulseRing 2s ease-in-out infinite;
 }
 
 @utility animate-spin-slow {
-  animation: spin 12s linear infinite;
+  animation: spin 8s linear infinite;
 }
+
+@utility animate-gradient-shift {
+  animation: gradientShift 8s ease infinite;
+  background-size: 200% 200%;
+}
+
+@utility animate-wave-bar {
+  animation: wavePulse 0.8s ease-in-out infinite alternate;
+}
+
+/* ─── Keyframes ─── */
 
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -60,79 +126,136 @@
 }
 
 @keyframes scaleUp {
-  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  from { opacity: 0; transform: scale(0.97) translateY(6px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes pulse-slow {
-  0%, 100% { transform: scale(1); opacity: 0.15; }
-  50% { transform: scale(1.1); opacity: 0.3; }
-}
-
-@keyframes blob-1 {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(40px, -60px) scale(1.1); }
-  66% { transform: translate(-30px, 30px) scale(0.95); }
-  100% { transform: translate(0px, 0px) scale(1); }
-}
-
-@keyframes blob-2 {
-  0% { transform: translate(0px, 0px) scale(1); }
-  50% { transform: translate(-50px, 80px) scale(1.2); }
-  100% { transform: translate(0px, 0px) scale(1); }
-}
-
-@keyframes blob-3 {
-  0% { transform: translate(0px, 0px) scale(1); }
-  40% { transform: translate(60px, 50px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  50% { transform: translateY(-4px); }
 }
 
 @keyframes shake {
   10%, 90% { transform: translate3d(-1px, 0, 0); }
   20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+  40%, 60% { transform: translate3d(3px, 0, 0); }
 }
 
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1); }
-  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 35px rgba(59, 130, 246, 0.3); }
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
+  70% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
 
-@keyframes glow-pulse-orange {
-  0%, 100% { box-shadow: 0 0 8px rgba(249, 115, 22, 0.2), 0 0 20px rgba(249, 115, 22, 0.1); }
-  50% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.6), 0 0 35px rgba(249, 115, 22, 0.3); }
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
+@keyframes wavePulse {
+  0% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1); }
+}
+
+/* ─── Animation Delays ─── */
 @utility delay-75 { animation-delay: 75ms; }
 @utility delay-100 { animation-delay: 100ms; }
 @utility delay-150 { animation-delay: 150ms; }
 @utility delay-200 { animation-delay: 200ms; }
 @utility delay-300 { animation-delay: 300ms; }
-@utility delay-500 { animation-delay: 500ms; }
 
-@utility animate-wave-bar {
-  animation: wave-pulse 1s ease-in-out infinite alternate;
+/* ═══════════════════════════════════════════
+   COMPONENT STYLES
+   ═══════════════════════════════════════════ */
+
+/* Timer monospace numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-@keyframes wave-pulse {
-  0% { transform: scaleY(0.3); }
-  100% { transform: scaleY(1.2); }
+/* Hide scrollbar for tab overflow */
+@utility scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
+/* ─── Custom Range Slider ─── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.dark input[type="range"] {
+  background: #27272a;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  border-color: #09090b;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  border-color: #09090b;
+}
+
+/* ─── Subtle noise texture for premium surfaces ─── */
+.noise-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.dark .noise-bg::before {
+  opacity: 0.03;
+}
