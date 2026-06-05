@@ -41,7 +41,12 @@ const today = () => new Date().toISOString().slice(0,10);
 const parseHrs = (start: string | undefined | null, end: string | undefined | null) => {
   if(!start||!end) return 0;
   const [sh,sm]=start.split(":").map(Number), [eh,em]=end.split(":").map(Number);
-  return Math.max(0,((eh*60+em)-(sh*60+sm))/60);
+  const startM = sh*60 + sm;
+  let endM = eh*60 + em;
+  if (endM < startM) {
+    endM += 24 * 60; // Rollover to the next day (add 24 hours)
+  }
+  return Math.max(0, (endM - startM) / 60);
 };
 
 const glassCard = "bg-white/70 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-2xl shadow-xs dark:shadow-none transition-all duration-300 hover:shadow-md hover:scale-[1.005]";
