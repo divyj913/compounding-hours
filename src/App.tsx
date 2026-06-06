@@ -385,6 +385,46 @@ export default function App() {
     }, 600);
   };
 
+  // Scout Cheer Game States
+  const [scoutEnergy, setScoutEnergy] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sprint_scout_energy");
+      return saved !== null ? Number(saved) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("sprint_scout_energy", String(scoutEnergy));
+  }, [scoutEnergy]);
+
+  const handleScoutCheer = (energyPoints: number, e: React.MouseEvent<HTMLButtonElement>, color: string) => {
+    setScoutEnergy(prev => prev + energyPoints);
+    
+    const parentRect = e.currentTarget.parentElement!.getBoundingClientRect();
+    const x = e.clientX - parentRect.left;
+    const y = e.clientY - parentRect.top;
+
+    const newParticles = Array.from({ length: 12 }, (_, i) => {
+      const angle = (i / 12) * 2 * Math.PI + (Math.random() - 0.5) * 0.5;
+      const velocity = 30 + Math.random() * 35;
+      return {
+        id: Date.now() + i + Math.random(),
+        dx: Math.cos(angle) * velocity,
+        dy: Math.sin(angle) * velocity,
+        left: x,
+        top: y,
+        color
+      };
+    });
+    setParticles(prev => [...prev, ...newParticles]);
+    setTimeout(() => {
+      setParticles(prev => prev.filter(p => !newParticles.find(n => n.id === p.id)));
+    }, 600);
+  };
+
+
   const [tab, setTab] = useState("Dashboard");
   const [darkMode, setDarkMode] = useState(() => {
     try {
@@ -1054,6 +1094,75 @@ export default function App() {
                   <div className="h-full rounded-full transition-all duration-[1000ms] ease-out bg-blue-600" style={{ width: `${pct}%` }} />
                 </div>
               </div>
+
+              {/* Scout Cheer Section */}
+              <div className="space-y-3 border-t border-slate-200 dark:border-zinc-800/80 pt-4 relative">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Scout focus fuel ⚡</h3>
+                  <div className="text-[10px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                    Energy Sent: {scoutEnergy}
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-500 dark:text-zinc-400 text-left">
+                  Are you checking Divy's progress? Send him a focus boost to cheer him on!
+                </p>
+
+                {/* Cheer Buttons */}
+                <div className="flex gap-2 relative">
+                  <button
+                    onClick={(e) => handleScoutCheer(1, e, "#3b82f6")}
+                    className="flex-1 py-2 text-xs font-semibold rounded-xl border border-slate-200/80 dark:border-zinc-800/80 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900/60 dark:hover:bg-zinc-800/60 text-slate-700 dark:text-zinc-300 transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center gap-1"
+                  >
+                    <span>☕</span>
+                    <span>Coffee (+1)</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => handleScoutCheer(2, e, "#f97316")}
+                    className="flex-1 py-2 text-xs font-semibold rounded-xl border border-orange-500/20 dark:border-orange-500/10 bg-orange-500/5 hover:bg-orange-500/10 text-orange-600 dark:text-orange-400 transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center gap-1"
+                  >
+                    <span>🔥</span>
+                    <span>Cheer (+2)</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => handleScoutCheer(5, e, "#8b5cf6")}
+                    className="flex-1 py-2 text-xs font-semibold rounded-xl border border-violet-500/20 dark:border-violet-500/10 bg-violet-500/5 hover:bg-violet-500/10 text-violet-600 dark:text-violet-400 transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center gap-1"
+                  >
+                    <span>🚀</span>
+                    <span>Boost (+5)</span>
+                  </button>
+
+                  {/* Particle Render for Scout Section */}
+                  {particles.map(p => (
+                    <div
+                      key={p.id}
+                      className="absolute animate-particle rounded-full pointer-events-none"
+                      style={{
+                        "--x": `${p.dx}px`,
+                        "--y": `${p.dy}px`,
+                        left: p.left,
+                        top: p.top,
+                        width: "6px",
+                        height: "6px",
+                        backgroundColor: p.color,
+                        transform: "translate(-50%, -50%)",
+                        position: "absolute"
+                      } as any}
+                    />
+                  ))}
+                </div>
+
+                {/* Interactive Status Indicator based on Scout Energy */}
+                <div className="text-[10px] text-left italic text-slate-400 dark:text-zinc-500 font-medium">
+                  {scoutEnergy === 0 ? "⚡ Divy is waiting for your focus cheer."
+                    : scoutEnergy < 15 ? "☕ Divy's coffee cup is starting to fill up!"
+                    : scoutEnergy < 50 ? "🔥 Divy's coding drive is getting hot!"
+                    : "🚀 Divy is locked into hyperdrive speed!"}
+                </div>
+              </div>
+
 
               {/* 10-Day Productivity Heatmap */}
               {dayData.length > 0 && (
