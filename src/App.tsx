@@ -325,9 +325,30 @@ export default function App() {
 
   // Timer
   const [timerRunning, setTimerRunning] = useState(false);
-  const [timerSecs, setTimerSecs] = useState(0);
-  const [timerStart, setTimerStart] = useState<Date | null>(null);
-  const [pomSecs, setPomSecs] = useState(25 * 60);
+  const [timerSecs, setTimerSecs] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_timer_secs");
+      return saved !== null ? Number(saved) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [timerStart, setTimerStart] = useState<Date | null>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_timer_start");
+      return saved !== null ? new Date(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [pomSecs, setPomSecs] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_pom_secs");
+      return saved !== null ? Number(saved) : 25 * 60;
+    } catch {
+      return 25 * 60;
+    }
+  });
   const [pomRunning, setPomRunning] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const timerRef = useRef<any>(null);
@@ -493,6 +514,24 @@ export default function App() {
   // Persist local storage as cache
   useEffect(() => { localStorage.setItem("sprint_sessions", JSON.stringify(sessions)); }, [sessions]);
   useEffect(() => { localStorage.setItem("sprint_reviews", JSON.stringify(dailyReviews)); }, [dailyReviews]);
+
+  // Timer and Pomodoro persistence
+  useEffect(() => {
+    localStorage.setItem("sprint_timer_secs", String(timerSecs));
+  }, [timerSecs]);
+
+  useEffect(() => {
+    if (timerStart) {
+      localStorage.setItem("sprint_timer_start", timerStart.toISOString());
+    } else {
+      localStorage.removeItem("sprint_timer_start");
+    }
+  }, [timerStart]);
+
+  useEffect(() => {
+    localStorage.setItem("sprint_pom_secs", String(pomSecs));
+  }, [pomSecs]);
+
 
   // Timer tick
   useEffect(() => {
