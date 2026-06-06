@@ -884,7 +884,7 @@ export default function App() {
         {/* 3D Floating Elements Background */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
           {/* Cube 1 (top-left, small blue rotating) */}
-          <div className="scene3d float3d-1 top-[15%] left-[8%] hidden lg:block" style={{ transform: `translate3d(${mousePos.x * -25}px, ${mousePos.y * -25}px, 0)` }}>
+          <div className="scene3d float3d-1 top-[15%] left-[8%] hidden lg:block animate-crystal-in opacity-0" style={{ transform: `translate3d(${mousePos.x * -25}px, ${mousePos.y * -25}px, 0)`, animationDelay: "300ms" }}>
             <div className="cube3d">
               <div className="face3d face3d-front" />
               <div className="face3d face3d-back" />
@@ -896,7 +896,7 @@ export default function App() {
           </div>
 
           {/* Cube 2 (bottom-right, large purple rotating) */}
-          <div className="scene3d float3d-2 bottom-[10%] right-[5%] hidden md:block" style={{ transform: `translate3d(${mousePos.x * 35}px, ${mousePos.y * 35}px, 0)` }}>
+          <div className="scene3d float3d-2 bottom-[10%] right-[5%] hidden md:block animate-crystal-in opacity-0" style={{ transform: `translate3d(${mousePos.x * 35}px, ${mousePos.y * 35}px, 0)`, animationDelay: "500ms" }}>
             <div className="cube3d cube3d-slow cube3d-large">
               <div className="face3d face3d-front" />
               <div className="face3d face3d-back" />
@@ -908,7 +908,7 @@ export default function App() {
           </div>
 
           {/* Cube 3 (middle-left, small rotating) */}
-          <div className="scene3d float3d-3 bottom-[20%] left-[12%] hidden xl:block" style={{ transform: `translate3d(${mousePos.x * -45}px, ${mousePos.y * -45}px, 0)` }}>
+          <div className="scene3d float3d-3 bottom-[20%] left-[12%] hidden xl:block animate-crystal-in opacity-0" style={{ transform: `translate3d(${mousePos.x * -45}px, ${mousePos.y * -45}px, 0)`, animationDelay: "400ms" }}>
             <div className="cube3d">
               <div className="face3d face3d-front" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
               <div className="face3d face3d-back" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
@@ -930,15 +930,15 @@ export default function App() {
 
         <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 items-start z-10">
           {/* Left Panel: Passcode Lock */}
-          <div className="md:col-span-5 space-y-6 animate-scale-up opacity-0" style={{ animationDelay: "100ms" }}>
+          <div className="md:col-span-5 space-y-6 animate-reveal-3d opacity-0" style={{ animationDelay: "150ms" }}>
             <TiltContainer className="w-full">
               <div className={`w-full p-8 ${glassCard} text-center space-y-6 shadow-xs ${isShaking ? "animate-shake" : ""}`} style={{ transformStyle: "preserve-3d" }}>
                 <div className="space-y-3" style={{ transform: "translateZ(25px)", transformStyle: "preserve-3d" }}>
-                  <div className="w-12 h-12 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2" style={{ transform: "translateZ(35px)" }}>
+                  <div className="w-12 h-12 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2 animate-slide-up opacity-0" style={{ transform: "translateZ(35px)", animationDelay: "300ms" }}>
                     <Icons.Lock />
                   </div>
-                  <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-50" style={{ transform: "translateZ(20px)" }}>Welcome back, Divy</h1>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400" style={{ transform: "translateZ(12px)" }}>Enter your passcode to unlock full dashboard access.</p>
+                  <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-50 animate-slide-up opacity-0" style={{ transform: "translateZ(20px)", animationDelay: "380ms" }}>Welcome back, Divy</h1>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 animate-slide-up opacity-0" style={{ transform: "translateZ(12px)", animationDelay: "460ms" }}>Enter your passcode to unlock full dashboard access.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4" style={{ transform: "translateZ(25px)", transformStyle: "preserve-3d" }}>
@@ -950,32 +950,32 @@ export default function App() {
                       setPasscode(e.target.value);
                       if (errorMsg) setErrorMsg("");
                     }}
-                    className="w-full text-center tracking-widest bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/80 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 placeholder-slate-300 dark:placeholder-zinc-700 focus:ring-2 focus:ring-blue-500/10 transition-all duration-200"
+                    className="w-full text-center tracking-widest bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/80 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 placeholder-slate-300 dark:placeholder-zinc-700 focus:ring-2 focus:ring-blue-500/10 transition-all duration-200 animate-slide-up opacity-0"
                     autoFocus
-                    style={{ transform: "translateZ(18px)" }}
+                    style={{ transform: "translateZ(18px)", animationDelay: "540ms" }}
                   />
 
                   {errorMsg && (
-                    <p className="text-xs text-red-600 dark:text-red-400 font-medium" style={{ transform: "translateZ(18px)" }}>{errorMsg}</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 font-medium animate-slide-up opacity-0" style={{ transform: "translateZ(18px)", animationDelay: "540ms" }}>{errorMsg}</p>
                   )}
 
                   <button
                     type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-all cursor-pointer shadow-xs"
-                    style={{ transform: "translateZ(18px)" }}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-all cursor-pointer shadow-xs animate-slide-up opacity-0"
+                    style={{ transform: "translateZ(18px)", animationDelay: "620ms" }}
                   >
                     Unlock Dashboard
                   </button>
                 </form>
 
                 {!import.meta.env.VITE_DASHBOARD_PASSCODE && (
-                  <p className="text-xs text-slate-400 dark:text-zinc-500 font-medium" style={{ transform: "translateZ(10px)" }}>Default passcode is <code className="bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-1.5 py-0.5 rounded font-bold">divy100</code></p>
+                  <p className="text-xs text-slate-400 dark:text-zinc-500 font-medium animate-slide-up opacity-0" style={{ transform: "translateZ(10px)", animationDelay: "700ms" }}>Default passcode is <code className="bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-1.5 py-0.5 rounded font-bold">divy100</code></p>
                 )}
               </div>
             </TiltContainer>
 
             {/* Sprint Momentum Booster Game */}
-            <div className={`w-full p-6 ${glassCard} text-center space-y-4 shadow-xs relative overflow-hidden select-none`}>
+            <div className={`w-full p-6 ${glassCard} text-center space-y-4 shadow-xs relative overflow-hidden select-none animate-reveal-3d opacity-0`} style={{ animationDelay: "300ms" }}>
               <div className="space-y-1">
                 <h2 className="text-sm font-bold tracking-tight text-slate-900 dark:text-zinc-100 flex items-center justify-center gap-1.5">
                   <Icons.Lightning />
@@ -1048,7 +1048,7 @@ export default function App() {
           </div>
 
           {/* Right Panel: Scout Challenge Progress Stream */}
-          <div className="md:col-span-7 space-y-6 animate-scale-up opacity-0" style={{ animationDelay: "200ms" }}>
+          <div className="md:col-span-7 space-y-6 animate-reveal-3d opacity-0" style={{ animationDelay: "250ms" }}>
             <div className={`p-6 ${glassCard} space-y-6 shadow-xs`}>
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/80 pb-4">
                 <div className="space-y-1">
