@@ -51,6 +51,17 @@ const parseHrs = (start: string | undefined | null, end: string | undefined | nu
   return Math.max(0, (endM - startM) / 60);
 };
 
+const getNextDate = (dateStr: string): string => {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day);
+  d.setDate(d.getDate() + 1);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+
 // Premium design tokens
 const glassCard = "bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/80 rounded-2xl shadow-xs dark:shadow-none transition-all duration-200 noise-bg relative overflow-hidden hover:border-slate-300 dark:hover:border-zinc-700/80";
 const btnBlue = "bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer shadow-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -550,15 +561,51 @@ export default function App() {
     if (!form.date || !form.start || !form.end || dur <= 0) { setFormMsg("Please fill all fields with valid times."); return; }
     if (!form.desc.trim()) { setFormMsg("Add a task description."); return; }
 
-    const sessionObj = { id: Date.now(), ...form, duration: +dur.toFixed(2) };
-    setSessions(prev => [...prev, sessionObj]);
+    const [sh, sm] = form.start.split(":").map(Number);
+    const [eh, em] = form.end.split(":").map(Number);
+    const startM = sh * 60 + sm;
+    const endM = eh * 60 + em;
+
+    const sessionsToAdd: Session[] = [];
+
+    if (endM < startM) {
+      // Midnight rollover - split into two sessions
+      const dur1 = parseHrs(form.start, "00:00");
+      if (dur1 > 0) {
+        sessionsToAdd.push({
+          ...form,
+          id: Date.now(),
+          end: "00:00",
+          duration: +dur1.toFixed(2),
+        });
+      }
+
+      const dur2 = parseHrs("00:00", form.end);
+      if (dur2 > 0 && form.end !== "00:00") {
+        sessionsToAdd.push({
+          ...form,
+          id: Date.now() + 1,
+          date: getNextDate(form.date),
+          start: "00:00",
+          duration: +dur2.toFixed(2),
+        });
+      }
+    } else {
+      sessionsToAdd.push({
+        ...form,
+        id: Date.now(),
+        duration: +dur.toFixed(2),
+      });
+    }
+
+    setSessions(prev => [...prev, ...sessionsToAdd]);
     setForm(f => ({ ...f, start: "", end: "", project: "", desc: "", cat: "Video Editing" }));
     setFormMsg("✅ Session logged!");
     setTimeout(() => setFormMsg(""), 2500);
 
     if (isSupabaseConfigured) {
       try {
-        const { error } = await supabase.from("sessions").insert([sessionObj]);
+        const { error } = await supabase.from("sessions").insert(sessionsToAdd);
         if (error) throw error;
       } catch (err) {
         console.error("Error inserting session to Supabase:", err);
