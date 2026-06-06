@@ -282,37 +282,6 @@ function VoiceWaveform({ active }: { active: boolean }) {
     </div>
   );
 }
-const playSpatialTick = (clientX?: number) => {
-  try {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(900, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.08);
-
-    gain.gain.setValueAtTime(0.012, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
-
-    if (panner && clientX !== undefined) {
-      const pan = (clientX / window.innerWidth) * 2 - 1;
-      panner.pan.setValueAtTime(Math.max(-1, Math.min(1, pan)), ctx.currentTime);
-      osc.connect(panner);
-      panner.connect(gain);
-    } else {
-      osc.connect(gain);
-    }
-
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.08);
-  } catch (e) {}
-};
-
 function TiltContainer({ children, className }: { children: React.ReactNode; className?: string }) {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -863,7 +832,6 @@ export default function App() {
 
         <button
           onClick={() => setDarkMode(!darkMode)}
-          onMouseEnter={(e) => playSpatialTick(e.clientX)}
           className="absolute top-6 right-6 p-2.5 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/80 hover:bg-slate-50 dark:hover:bg-zinc-800/60 transition-all text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 cursor-pointer z-50"
           title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
         >
@@ -892,8 +860,6 @@ export default function App() {
                       setPasscode(e.target.value);
                       if (errorMsg) setErrorMsg("");
                     }}
-                    onMouseEnter={(e) => playSpatialTick(e.clientX)}
-                    onKeyDown={() => playSpatialTick()}
                     className="w-full text-center tracking-widest bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/80 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 placeholder-slate-300 dark:placeholder-zinc-700 focus:ring-2 focus:ring-blue-500/10 transition-all duration-200"
                     autoFocus
                     style={{ transform: "translateZ(18px)" }}
@@ -905,8 +871,6 @@ export default function App() {
 
                   <button
                     type="submit"
-                    onMouseEnter={(e) => playSpatialTick(e.clientX)}
-                    onClick={(e) => playSpatialTick(e.clientX)}
                     className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-all cursor-pointer shadow-xs"
                     style={{ transform: "translateZ(18px)" }}
                   >
@@ -1108,11 +1072,7 @@ export default function App() {
             {TABS.map((t) => (
               <button
                 key={t}
-                onClick={(e) => {
-                  playSpatialTick(e.clientX);
-                  setTab(t);
-                }}
-                onMouseEnter={(e) => playSpatialTick(e.clientX)}
+                onClick={() => setTab(t)}
                 className={`py-3.5 text-xs font-semibold relative whitespace-nowrap transition-all cursor-pointer ${tab === t ? "text-blue-600 dark:text-blue-400" : "text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100"}`}
               >
                 {t}
