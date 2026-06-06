@@ -61,6 +61,15 @@ const getNextDate = (dateStr: string): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const getMomentumTier = (score: number) => {
+  if (score < 10) return { title: "Couch Potato 🥔", next: 10, prev: 0 };
+  if (score < 25) return { title: "Active Scroller 🖱️", next: 25, prev: 10 };
+  if (score < 50) return { title: "Keyboard Warrior ⌨️", next: 50, prev: 25 };
+  if (score < 100) return { title: "Caffeine Driven ☕", next: 100, prev: 50 };
+  if (score < 200) return { title: "Hyper-Focused Beast 🚀", next: 200, prev: 100 };
+  return { title: "God Mode Wizard 🌌", next: score, prev: 200 };
+};
+
 
 // Premium design tokens
 const glassCard = "bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/80 rounded-2xl shadow-xs dark:shadow-none transition-all duration-200 noise-bg relative overflow-hidden hover:border-slate-300 dark:hover:border-zinc-700/80";
@@ -333,6 +342,47 @@ export default function App() {
     const x = (e.clientX / window.innerWidth) - 0.5;
     const y = (e.clientY / window.innerHeight) - 0.5;
     setMousePos({ x, y });
+  };
+
+  // Momentum Clicker Game States
+  const [momentum, setMomentum] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sprint_momentum");
+      return saved !== null ? Number(saved) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [particles, setParticles] = useState<{ id: number; dx: number; dy: number; left: number; top: number; color: string }[]>([]);
+
+  useEffect(() => {
+    localStorage.setItem("sprint_momentum", String(momentum));
+  }, [momentum]);
+
+  const handleBoost = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setMomentum(prev => prev + 1);
+    
+    // Generate particles bursting from click coordinates
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const newParticles = Array.from({ length: 12 }, (_, i) => {
+      const angle = (i / 12) * 2 * Math.PI + (Math.random() - 0.5) * 0.5;
+      const velocity = 40 + Math.random() * 45;
+      return {
+        id: Date.now() + i + Math.random(),
+        dx: Math.cos(angle) * velocity,
+        dy: Math.sin(angle) * velocity,
+        left: clickX,
+        top: clickY,
+        color: ["#3b82f6", "#8b5cf6", "#ec4899", "#10b981", "#f59e0b"][Math.floor(Math.random() * 5)]
+      };
+    });
+    setParticles(prev => [...prev, ...newParticles]);
+    setTimeout(() => {
+      setParticles(prev => prev.filter(p => !newParticles.find(n => n.id === p.id)));
+    }, 600);
   };
 
   const [tab, setTab] = useState("Dashboard");
@@ -883,6 +933,78 @@ export default function App() {
                 )}
               </div>
             </TiltContainer>
+
+            {/* Sprint Momentum Booster Game */}
+            <div className={`w-full p-6 ${glassCard} text-center space-y-4 shadow-xs relative overflow-hidden select-none`}>
+              <div className="space-y-1">
+                <h2 className="text-sm font-bold tracking-tight text-slate-900 dark:text-zinc-100 flex items-center justify-center gap-1.5">
+                  <Icons.Lightning />
+                  <span>Sprint Momentum Booster</span>
+                </h2>
+                <p className="text-[10px] text-slate-500 dark:text-zinc-400">Click the reactor core to compound your focus momentum!</p>
+              </div>
+
+              {/* Reactor Button */}
+              <div className="relative flex justify-center py-2">
+                <button
+                  onClick={handleBoost}
+                  className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-150 cursor-pointer flex flex-col items-center justify-center relative select-none active:scale-95 border-4 border-white dark:border-zinc-800/80 outline-none"
+                >
+                  <span className="text-[10px] uppercase font-semibold text-blue-100 opacity-80 leading-none">Focus</span>
+                  <span className="text-xl tracking-tighter leading-none mt-0.5">{momentum}</span>
+                </button>
+
+                {/* Particle Explosion Layer */}
+                {particles.map(p => (
+                  <div
+                    key={p.id}
+                    className="absolute animate-particle rounded-full pointer-events-none"
+                    style={{
+                      "--x": `${p.dx}px`,
+                      "--y": `${p.dy}px`,
+                      left: p.left,
+                      top: p.top,
+                      width: "8px",
+                      height: "8px",
+                      backgroundColor: p.color,
+                      transform: "translate(-50%, -50%)",
+                      position: "absolute"
+                    } as any}
+                  />
+                ))}
+              </div>
+
+              {/* Progress and Tier stats */}
+              {(() => {
+                const tier = getMomentumTier(momentum);
+                const isMax = tier.next === momentum;
+                const totalNeed = tier.next - tier.prev;
+                const done = momentum - tier.prev;
+                const progressPct = isMax ? 100 : Math.round((done / totalNeed) * 100);
+
+                return (
+                  <div className="space-y-2 text-left">
+                    <div className="flex justify-between text-[11px] font-semibold">
+                      <span className="text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Rank</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{tier.title}</span>
+                    </div>
+
+                    <div className="relative h-2.5 bg-slate-100 dark:bg-zinc-800/60 rounded-full overflow-hidden border border-slate-200/40 dark:border-zinc-800/30">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-200 ease-out"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+
+                    {!isMax && (
+                      <div className="text-[10px] text-center text-slate-400 dark:text-zinc-500">
+                        {tier.next - momentum} more clicks to compound to next rank
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
 
           {/* Right Panel: Scout Challenge Progress Stream */}
