@@ -282,6 +282,49 @@ function VoiceWaveform({ active }: { active: boolean }) {
     </div>
   );
 }
+function TiltContainer({ children, className }: { children: React.ReactNode; className?: string }) {
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left - width / 2;
+    const mouseY = e.clientY - rect.top - height / 2;
+    
+    // Max rotation 12 degrees
+    const rX = -(mouseY / (height / 2)) * 12;
+    const rY = (mouseX / (width / 2)) * 12;
+    
+    setTilt({ x: rX, y: rY });
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setTilt({ x: 0, y: 0 });
+  };
+
+  const style: React.CSSProperties = {
+    transform: isHovered
+      ? `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.02, 1.02, 1.02)`
+      : `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`,
+    transition: isHovered ? "transform 0.05s ease-out" : "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+    transformStyle: "preserve-3d",
+  };
+
+  return (
+    <div
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      style={style}
+      className={className}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function App() {
   const [tab, setTab] = useState("Dashboard");
@@ -740,6 +783,45 @@ export default function App() {
         {/* Subtle centered top radial gradient */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[350px] pointer-events-none blur-[100px]" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(0,0,0,0) 70%)" }} />
 
+        {/* 3D Floating Elements Background */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
+          {/* Cube 1 (top-left, small blue rotating) */}
+          <div className="scene3d float3d-1 top-[15%] left-[8%] hidden lg:block">
+            <div className="cube3d">
+              <div className="face3d face3d-front" />
+              <div className="face3d face3d-back" />
+              <div className="face3d face3d-right" />
+              <div className="face3d face3d-left" />
+              <div className="face3d face3d-top" />
+              <div className="face3d face3d-bottom" />
+            </div>
+          </div>
+
+          {/* Cube 2 (bottom-right, large purple rotating) */}
+          <div className="scene3d float3d-2 bottom-[10%] right-[5%] hidden md:block">
+            <div className="cube3d cube3d-slow cube3d-large">
+              <div className="face3d face3d-front" />
+              <div className="face3d face3d-back" />
+              <div className="face3d face3d-right" />
+              <div className="face3d face3d-left" />
+              <div className="face3d face3d-top" />
+              <div className="face3d face3d-bottom" />
+            </div>
+          </div>
+
+          {/* Cube 3 (middle-left, small rotating) */}
+          <div className="scene3d float3d-3 bottom-[20%] left-[12%] hidden xl:block">
+            <div className="cube3d">
+              <div className="face3d face3d-front" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
+              <div className="face3d face3d-back" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
+              <div className="face3d face3d-right" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
+              <div className="face3d face3d-left" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
+              <div className="face3d face3d-top" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
+              <div className="face3d face3d-bottom" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="absolute top-6 right-6 p-2.5 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/80 hover:bg-slate-50 dark:hover:bg-zinc-800/60 transition-all text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 cursor-pointer z-50"
@@ -751,44 +833,48 @@ export default function App() {
         <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 items-start z-10">
           {/* Left Panel: Passcode Lock */}
           <div className="md:col-span-5 space-y-6 animate-scale-up opacity-0" style={{ animationDelay: "100ms" }}>
-            <div className={`w-full p-8 ${glassCard} text-center space-y-6 shadow-xs ${isShaking ? "animate-shake" : ""}`}>
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Icons.Lock />
+            <TiltContainer className="w-full">
+              <div className={`w-full p-8 ${glassCard} text-center space-y-6 shadow-xs ${isShaking ? "animate-shake" : ""}`} style={{ transformStyle: "preserve-3d" }}>
+                <div className="space-y-3" style={{ transform: "translateZ(25px)", transformStyle: "preserve-3d" }}>
+                  <div className="w-12 h-12 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2" style={{ transform: "translateZ(35px)" }}>
+                    <Icons.Lock />
+                  </div>
+                  <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-50" style={{ transform: "translateZ(20px)" }}>Welcome back, Divy</h1>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400" style={{ transform: "translateZ(12px)" }}>Enter your passcode to unlock full dashboard access.</p>
                 </div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">Welcome back, Divy</h1>
-                <p className="text-xs text-slate-500 dark:text-zinc-400">Enter your passcode to unlock full dashboard access.</p>
-              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={passcode}
-                  onChange={e => {
-                    setPasscode(e.target.value);
-                    if (errorMsg) setErrorMsg("");
-                  }}
-                  className="w-full text-center tracking-widest bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/80 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 placeholder-slate-300 dark:placeholder-zinc-700 focus:ring-2 focus:ring-blue-500/10 transition-all duration-200"
-                  autoFocus
-                />
+                <form onSubmit={handleSubmit} className="space-y-4" style={{ transform: "translateZ(25px)", transformStyle: "preserve-3d" }}>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={passcode}
+                    onChange={e => {
+                      setPasscode(e.target.value);
+                      if (errorMsg) setErrorMsg("");
+                    }}
+                    className="w-full text-center tracking-widest bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/80 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 placeholder-slate-300 dark:placeholder-zinc-700 focus:ring-2 focus:ring-blue-500/10 transition-all duration-200"
+                    autoFocus
+                    style={{ transform: "translateZ(18px)" }}
+                  />
 
-                {errorMsg && (
-                  <p className="text-xs text-red-600 dark:text-red-400 font-medium">{errorMsg}</p>
+                  {errorMsg && (
+                    <p className="text-xs text-red-600 dark:text-red-400 font-medium" style={{ transform: "translateZ(18px)" }}>{errorMsg}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-all cursor-pointer shadow-xs"
+                    style={{ transform: "translateZ(18px)" }}
+                  >
+                    Unlock Dashboard
+                  </button>
+                </form>
+
+                {!import.meta.env.VITE_DASHBOARD_PASSCODE && (
+                  <p className="text-xs text-slate-400 dark:text-zinc-500 font-medium" style={{ transform: "translateZ(10px)" }}>Default passcode is <code className="bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-1.5 py-0.5 rounded font-bold">divy100</code></p>
                 )}
-
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-all cursor-pointer shadow-xs"
-                >
-                  Unlock Dashboard
-                </button>
-              </form>
-
-              {!import.meta.env.VITE_DASHBOARD_PASSCODE && (
-                <p className="text-xs text-slate-400 dark:text-zinc-500 font-medium">Default passcode is <code className="bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-1.5 py-0.5 rounded font-bold">divy100</code></p>
-              )}
-            </div>
+              </div>
+            </TiltContainer>
           </div>
 
           {/* Right Panel: Scout Challenge Progress Stream */}
