@@ -282,6 +282,37 @@ function VoiceWaveform({ active }: { active: boolean }) {
     </div>
   );
 }
+const playSpatialTick = (clientX?: number) => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(900, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.08);
+
+    gain.gain.setValueAtTime(0.012, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+
+    if (panner && clientX !== undefined) {
+      const pan = (clientX / window.innerWidth) * 2 - 1;
+      panner.pan.setValueAtTime(Math.max(-1, Math.min(1, pan)), ctx.currentTime);
+      osc.connect(panner);
+      panner.connect(gain);
+    } else {
+      osc.connect(gain);
+    }
+
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.08);
+  } catch (e) {}
+};
+
 function TiltContainer({ children, className }: { children: React.ReactNode; className?: string }) {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -327,6 +358,14 @@ function TiltContainer({ children, className }: { children: React.ReactNode; cla
 }
 
 export default function App() {
+  // Mouse position for background 3D parallax
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const handlePageMouseMove = (e: React.MouseEvent) => {
+    const x = (e.clientX / window.innerWidth) - 0.5;
+    const y = (e.clientY / window.innerHeight) - 0.5;
+    setMousePos({ x, y });
+  };
+
   const [tab, setTab] = useState("Dashboard");
   const [darkMode, setDarkMode] = useState(() => {
     try {
@@ -779,14 +818,14 @@ export default function App() {
   // Passcode Lockscreen UI
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300 px-4 py-8 flex items-center justify-center relative overflow-hidden">
+      <div onMouseMove={handlePageMouseMove} className="min-h-screen bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300 px-4 py-8 flex items-center justify-center relative overflow-hidden">
         {/* Subtle centered top radial gradient */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[350px] pointer-events-none blur-[100px]" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(0,0,0,0) 70%)" }} />
 
         {/* 3D Floating Elements Background */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
           {/* Cube 1 (top-left, small blue rotating) */}
-          <div className="scene3d float3d-1 top-[15%] left-[8%] hidden lg:block">
+          <div className="scene3d float3d-1 top-[15%] left-[8%] hidden lg:block" style={{ transform: `translate3d(${mousePos.x * -25}px, ${mousePos.y * -25}px, 0)` }}>
             <div className="cube3d">
               <div className="face3d face3d-front" />
               <div className="face3d face3d-back" />
@@ -798,7 +837,7 @@ export default function App() {
           </div>
 
           {/* Cube 2 (bottom-right, large purple rotating) */}
-          <div className="scene3d float3d-2 bottom-[10%] right-[5%] hidden md:block">
+          <div className="scene3d float3d-2 bottom-[10%] right-[5%] hidden md:block" style={{ transform: `translate3d(${mousePos.x * 35}px, ${mousePos.y * 35}px, 0)` }}>
             <div className="cube3d cube3d-slow cube3d-large">
               <div className="face3d face3d-front" />
               <div className="face3d face3d-back" />
@@ -810,7 +849,7 @@ export default function App() {
           </div>
 
           {/* Cube 3 (middle-left, small rotating) */}
-          <div className="scene3d float3d-3 bottom-[20%] left-[12%] hidden xl:block">
+          <div className="scene3d float3d-3 bottom-[20%] left-[12%] hidden xl:block" style={{ transform: `translate3d(${mousePos.x * -45}px, ${mousePos.y * -45}px, 0)` }}>
             <div className="cube3d">
               <div className="face3d face3d-front" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
               <div className="face3d face3d-back" style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }} />
@@ -824,6 +863,7 @@ export default function App() {
 
         <button
           onClick={() => setDarkMode(!darkMode)}
+          onMouseEnter={(e) => playSpatialTick(e.clientX)}
           className="absolute top-6 right-6 p-2.5 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/80 hover:bg-slate-50 dark:hover:bg-zinc-800/60 transition-all text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 cursor-pointer z-50"
           title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
         >
@@ -852,6 +892,8 @@ export default function App() {
                       setPasscode(e.target.value);
                       if (errorMsg) setErrorMsg("");
                     }}
+                    onMouseEnter={(e) => playSpatialTick(e.clientX)}
+                    onKeyDown={() => playSpatialTick()}
                     className="w-full text-center tracking-widest bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/80 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 placeholder-slate-300 dark:placeholder-zinc-700 focus:ring-2 focus:ring-blue-500/10 transition-all duration-200"
                     autoFocus
                     style={{ transform: "translateZ(18px)" }}
@@ -863,6 +905,8 @@ export default function App() {
 
                   <button
                     type="submit"
+                    onMouseEnter={(e) => playSpatialTick(e.clientX)}
+                    onClick={(e) => playSpatialTick(e.clientX)}
                     className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-all cursor-pointer shadow-xs"
                     style={{ transform: "translateZ(18px)" }}
                   >
@@ -1064,7 +1108,11 @@ export default function App() {
             {TABS.map((t) => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={(e) => {
+                  playSpatialTick(e.clientX);
+                  setTab(t);
+                }}
+                onMouseEnter={(e) => playSpatialTick(e.clientX)}
                 className={`py-3.5 text-xs font-semibold relative whitespace-nowrap transition-all cursor-pointer ${tab === t ? "text-blue-600 dark:text-blue-400" : "text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100"}`}
               >
                 {t}
