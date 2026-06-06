@@ -464,8 +464,8 @@ export default function App() {
   const [form, setForm] = useState<Omit<Session, "id" | "duration">>({ date: today(), start: "", end: "", project: "", desc: "", cat: "Video Editing" });
   const [formMsg, setFormMsg] = useState("");
 
-  // Timer
-  const [timerRunning, setTimerRunning] = useState(false);
+  // Timer States
+  const [timerRunning, setTimerRunning] = useState(() => localStorage.getItem("sprint_timer_running") === "true");
   const [timerSecs, setTimerSecs] = useState<number>(() => {
     try {
       const saved = localStorage.getItem("sprint_timer_secs");
@@ -482,6 +482,25 @@ export default function App() {
       return null;
     }
   });
+  const [lastRunningTime, setLastRunningTime] = useState<number | null>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_timer_last_running");
+      return saved !== null ? Number(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [accumulatedSecsAtStart, setAccumulatedSecsAtStart] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_timer_accumulated");
+      return saved !== null ? Number(saved) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  // Pomodoro States
+  const [pomRunning, setPomRunning] = useState(() => localStorage.getItem("sprint_pom_running") === "true");
   const [pomSecs, setPomSecs] = useState<number>(() => {
     try {
       const saved = localStorage.getItem("sprint_pom_secs");
@@ -490,7 +509,23 @@ export default function App() {
       return 25 * 60;
     }
   });
-  const [pomRunning, setPomRunning] = useState(false);
+  const [pomLastRunningTime, setPomLastRunningTime] = useState<number | null>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_pom_last_running");
+      return saved !== null ? Number(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [pomSecsAtStart, setPomSecsAtStart] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_pom_secs_at_start");
+      return saved !== null ? Number(saved) : 25 * 60;
+    } catch {
+      return 25 * 60;
+    }
+  });
+
   const [focusMode, setFocusMode] = useState(false);
   const timerRef = useRef<any>(null);
   const pomRef = useRef<any>(null);
@@ -658,6 +693,10 @@ export default function App() {
 
   // Timer and Pomodoro persistence
   useEffect(() => {
+    localStorage.setItem("sprint_timer_running", String(timerRunning));
+  }, [timerRunning]);
+
+  useEffect(() => {
     localStorage.setItem("sprint_timer_secs", String(timerSecs));
   }, [timerSecs]);
 
@@ -670,23 +709,75 @@ export default function App() {
   }, [timerStart]);
 
   useEffect(() => {
+    if (lastRunningTime !== null) {
+      localStorage.setItem("sprint_timer_last_running", String(lastRunningTime));
+    } else {
+      localStorage.removeItem("sprint_timer_last_running");
+    }
+  }, [lastRunningTime]);
+
+  useEffect(() => {
+    localStorage.setItem("sprint_timer_accumulated", String(accumulatedSecsAtStart));
+  }, [accumulatedSecsAtStart]);
+
+  useEffect(() => {
+    localStorage.setItem("sprint_pom_running", String(pomRunning));
+  }, [pomRunning]);
+
+  useEffect(() => {
     localStorage.setItem("sprint_pom_secs", String(pomSecs));
   }, [pomSecs]);
 
+  useEffect(() => {
+    if (pomLastRunningTime !== null) {
+      localStorage.setItem("sprint_pom_last_running", String(pomLastRunningTime));
+    } else {
+      localStorage.removeItem("sprint_pom_last_running");
+    }
+  }, [pomLastRunningTime]);
+
+  useEffect(() => {
+    localStorage.setItem("sprint_pom_secs_at_start", String(pomSecsAtStart));
+  }, [pomSecsAtStart]);
 
   // Timer tick
   useEffect(() => {
-    if (timerRunning) { timerRef.current = setInterval(() => setTimerSecs(s => s + 1), 1000); }
-    else if (timerRef.current !== null) { clearInterval(timerRef.current); }
-    return () => { if (timerRef.current !== null) clearInterval(timerRef.current); };
-  }, [timerRunning]);
+    if (timerRunning && lastRunningTime !== null) {
+      timerRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - lastRunningTime) / 1000);
+        setTimerSecs(accumulatedSecsAtStart + elapsed);
+      }, 200);
+    } else if (timerRef.current !== null) {
+      clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current !== null) clearInterval(timerRef.current);
+    };
+  }, [timerRunning, lastRunningTime, accumulatedSecsAtStart]);
 
   // Pomodoro tick
   useEffect(() => {
-    if (pomRunning) { pomRef.current = setInterval(() => setPomSecs(s => { if (s <= 1) { if (pomRef.current !== null) clearInterval(pomRef.current); setPomRunning(false); return 0; } return s - 1; }), 1000); }
-    else if (pomRef.current !== null) { clearInterval(pomRef.current); }
-    return () => { if (pomRef.current !== null) clearInterval(pomRef.current); };
-  }, [pomRunning]);
+    if (pomRunning && pomLastRunningTime !== null) {
+      pomRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - pomLastRunningTime) / 1000);
+        const rem = pomSecsAtStart - elapsed;
+        if (rem <= 0) {
+          setPomSecs(0);
+          setPomRunning(false);
+          setPomLastRunningTime(null);
+          setPomSecsAtStart(0);
+          if (pomRef.current !== null) clearInterval(pomRef.current);
+        } else {
+          setPomSecs(rem);
+        }
+      }, 200);
+    } else if (pomRef.current !== null) {
+      clearInterval(pomRef.current);
+    }
+    return () => {
+      if (pomRef.current !== null) clearInterval(pomRef.current);
+    };
+  }, [pomRunning, pomLastRunningTime, pomSecsAtStart]);
 
   const totalHrs = sessions.reduce((a, s) => a + s.duration, 0);
   const doneHrs = +totalHrs.toFixed(2);
@@ -805,8 +896,70 @@ export default function App() {
     }
   };
 
+  const startTimer = () => {
+    const now = Date.now();
+    if (!timerStart) {
+      setTimerStart(new Date(now));
+    }
+    setLastRunningTime(now);
+    setAccumulatedSecsAtStart(timerSecs);
+    setTimerRunning(true);
+  };
+
+  const pauseTimer = () => {
+    setTimerRunning(false);
+    setLastRunningTime(null);
+    setAccumulatedSecsAtStart(0);
+  };
+
+  const toggleTimer = () => {
+    if (timerRunning) {
+      pauseTimer();
+    } else {
+      startTimer();
+    }
+  };
+
+  const resetTimer = () => {
+    setTimerRunning(false);
+    setTimerSecs(0);
+    setTimerStart(null);
+    setLastRunningTime(null);
+    setAccumulatedSecsAtStart(0);
+  };
+
+  const startPom = () => {
+    const now = Date.now();
+    setPomLastRunningTime(now);
+    setPomSecsAtStart(pomSecs);
+    setPomRunning(true);
+  };
+
+  const pausePom = () => {
+    setPomRunning(false);
+    setPomLastRunningTime(null);
+    setPomSecsAtStart(0);
+  };
+
+  const togglePom = () => {
+    if (pomRunning) {
+      pausePom();
+    } else {
+      startPom();
+    }
+  };
+
+  const resetPom = (secs: number = 25 * 60) => {
+    setPomRunning(false);
+    setPomSecs(secs);
+    setPomLastRunningTime(null);
+    setPomSecsAtStart(secs);
+  };
+
   const stopTimerAndFill = () => {
     setTimerRunning(false);
+    setLastRunningTime(null);
+    setAccumulatedSecsAtStart(0);
     if (timerStart) {
       const now = new Date(), s = new Date(timerStart);
       setForm(f => ({
@@ -867,7 +1020,7 @@ export default function App() {
       <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold tracking-widest uppercase">Focus Mode</div>
       <div className="text-8xl font-mono font-bold text-slate-900 dark:text-zinc-50 tabular-nums select-none tracking-tight">{fmtTime(timerSecs)}</div>
       <div className="flex gap-3">
-        <button className={btnBlue} onClick={() => { if (!timerRunning && timerSecs === 0) setTimerStart(new Date()); setTimerRunning(r => !r); }}>{timerRunning ? "Pause" : "Start"}</button>
+        <button className={btnBlue} onClick={toggleTimer}>{timerRunning ? "Pause" : "Start"}</button>
         <button className={btnDanger} onClick={stopTimerAndFill}>Stop & Log</button>
         <button className={btnSecondary} onClick={() => setFocusMode(false)}>Exit</button>
       </div>
@@ -1399,9 +1552,9 @@ export default function App() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <button className={btnBlue} onClick={() => { if (!timerRunning && timerSecs === 0) setTimerStart(new Date()); setTimerRunning(r => !r); }}>{timerRunning ? "Pause" : "Start"}</button>
+                  <button className={btnBlue} onClick={toggleTimer}>{timerRunning ? "Pause" : "Start"}</button>
                   <button className={btnDanger} onClick={stopTimerAndFill}>Stop & Log</button>
-                  <button className={btnSecondary} onClick={() => { setTimerRunning(false); setTimerSecs(0); setTimerStart(null); }}>Reset</button>
+                  <button className={btnSecondary} onClick={resetTimer}>Reset</button>
                   <button className={btnSecondary} onClick={() => setFocusMode(true)}>Focus Mode</button>
                 </div>
 
@@ -1416,9 +1569,9 @@ export default function App() {
                     <div className="text-2xl font-mono font-bold text-orange-600 dark:text-orange-400 tabular-nums">{fmtTime(pomSecs)}</div>
                   </div>
                   <div className="flex gap-1.5">
-                    <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-orange-600/10 hover:bg-orange-600/20 border border-orange-500/20 text-orange-600 dark:text-orange-400 transition-all cursor-pointer" onClick={() => setPomRunning(r => !r)}>{pomRunning ? "Pause" : "Start"}</button>
-                    <button className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-400 cursor-pointer border border-slate-200 dark:border-zinc-800/60" onClick={() => { setPomRunning(false); setPomSecs(25 * 60); }} title="Reset Pomodoro"><Icons.Trash /></button>
-                    <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-400 cursor-pointer border border-slate-200 dark:border-zinc-800/60" onClick={() => { setPomRunning(false); setPomSecs(5 * 60); }}>5m</button>
+                    <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-orange-600/10 hover:bg-orange-600/20 border border-orange-500/20 text-orange-600 dark:text-orange-400 transition-all cursor-pointer" onClick={togglePom}>{pomRunning ? "Pause" : "Start"}</button>
+                    <button className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-400 cursor-pointer border border-slate-200 dark:border-zinc-800/60" onClick={() => resetPom(25 * 60)} title="Reset Pomodoro"><Icons.Trash /></button>
+                    <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-400 cursor-pointer border border-slate-200 dark:border-zinc-800/60" onClick={() => resetPom(5 * 60)}>5m</button>
                   </div>
                 </div>
               </div>
