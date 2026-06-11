@@ -1125,6 +1125,28 @@ export default function App() {
                   </button>
                 </form>
 
+                <div className="relative flex items-center justify-center my-1" style={{ transform: "translateZ(10px)" }}>
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200 dark:border-zinc-800/80" />
+                  </div>
+                  <span className="relative px-3 bg-white dark:bg-zinc-900 text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500">or</span>
+                </div>
+
+                <div style={{ transform: "translateZ(18px)" }}>
+                  <a
+                    href="https://divyjain.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01]"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <span>Watch My Work</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-3.5 h-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                  </a>
+                </div>
+
                 {!import.meta.env.VITE_DASHBOARD_PASSCODE && (
                   <p className="text-xs text-slate-400 dark:text-zinc-500 font-medium" style={{ transform: "translateZ(10px)" }}>Default passcode is <code className="bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-1.5 py-0.5 rounded font-bold">divy100</code></p>
                 )}
@@ -1432,6 +1454,19 @@ export default function App() {
               <span className="text-xs text-slate-500 dark:text-zinc-400">Total:</span>
               <span className="text-xs font-bold text-slate-900 dark:text-zinc-200">{doneHrs}h</span>
             </div>
+
+            <a
+              href="https://divyjain.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-xs"
+              style={{ textDecoration: "none" }}
+            >
+              <span>Watch My Work</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-3 h-3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+            </a>
 
             <button
               onClick={() => {
