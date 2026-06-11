@@ -1222,7 +1222,7 @@ export default function App() {
               </div>
 
               {/* Progress Summary */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800/60">
                   <div className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase font-semibold tracking-wider">Done</div>
                   <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{doneHrs}h</div>
@@ -1234,10 +1234,6 @@ export default function App() {
                 <div className="p-4 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800/60">
                   <div className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase font-semibold tracking-wider">Streak</div>
                   <div className="text-lg font-bold text-green-600 dark:text-green-400">{streak}d</div>
-                </div>
-                <div className="p-4 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800/60">
-                  <div className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase font-semibold tracking-wider">Days Left</div>
-                  <div className="text-lg font-bold text-slate-800 dark:text-zinc-200">{daysLeft}d</div>
                 </div>
               </div>
 
@@ -1437,10 +1433,6 @@ export default function App() {
               <span className="text-xs font-bold text-slate-900 dark:text-zinc-200">{doneHrs}h</span>
             </div>
 
-            <div className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400">
-              {daysLeft}d left
-            </div>
-
             <button
               onClick={() => {
                 localStorage.removeItem("sprint_authenticated");
@@ -1492,11 +1484,10 @@ export default function App() {
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <StatCard label="Hours Done" value={doneHrs} sub="of 100 hrs" accent="text-blue-600 dark:text-blue-400" delay={100} />
               <StatCard label="Hours Left" value={remHrs} sub={estCompletion} delay={150} />
               <StatCard label="Current Streak" value={`${streak}d`} sub="consecutive days" accent="text-green-600 dark:text-green-400" delay={200} />
-              <StatCard label="Days Left" value={daysLeft} sub="out of 10" delay={250} />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
