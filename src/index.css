@@ -382,4 +382,9 @@ input[type="range"]::-moz-range-thumb {
   animation: particlePop 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
 }
 
+/* Timer monospace font */
+.font-timer-mono {
+  font-family: 'Space Mono', monospace !important;
+}
+
 

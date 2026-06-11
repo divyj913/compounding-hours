@@ -1020,7 +1020,7 @@ export default function App() {
   if (focusMode) return (
     <div className="fixed inset-0 bg-slate-50 dark:bg-zinc-950 flex flex-col items-center justify-center z-50 gap-8">
       <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold tracking-widest uppercase">Focus Mode</div>
-      <div className="text-8xl font-mono font-bold text-slate-900 dark:text-zinc-50 tabular-nums select-none tracking-tight">{fmtTime(timerSecs)}</div>
+      <div className="text-8xl font-timer-mono font-bold text-slate-900 dark:text-zinc-50 tabular-nums select-none tracking-tight">{fmtTime(timerSecs)}</div>
       <div className="flex gap-3">
         <button className={btnBlue} onClick={toggleTimer}>{timerRunning ? "Pause" : "Start"}</button>
         <button className={btnDanger} onClick={stopTimerAndFill}>Stop & Log</button>
@@ -1577,7 +1577,7 @@ export default function App() {
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase font-semibold tracking-wider mb-0.5">Session Timer</div>
-                    <div className="text-4xl font-mono font-bold text-slate-900 dark:text-zinc-100 tabular-nums select-none tracking-tight">{fmtTime(timerSecs)}</div>
+                    <div className="text-4xl font-timer-mono font-bold text-slate-900 dark:text-zinc-100 tabular-nums select-none tracking-tight">{fmtTime(timerSecs)}</div>
                   </div>
                 </div>
 
@@ -1596,7 +1596,7 @@ export default function App() {
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase font-semibold tracking-wider mb-0.5">Pomodoro</div>
-                    <div className="text-2xl font-mono font-bold text-orange-600 dark:text-orange-400 tabular-nums">{fmtTime(pomSecs)}</div>
+                    <div className="text-2xl font-timer-mono font-bold text-orange-600 dark:text-orange-400 tabular-nums">{fmtTime(pomSecs)}</div>
                   </div>
                   <div className="flex gap-1.5">
                     <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-orange-600/10 hover:bg-orange-600/20 border border-orange-500/20 text-orange-600 dark:text-orange-400 transition-all cursor-pointer" onClick={togglePom}>{pomRunning ? "Pause" : "Start"}</button>
