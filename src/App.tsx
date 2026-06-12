@@ -215,6 +215,11 @@ const Icons = {
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
     </svg>
+  ),
+  Settings: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.43l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.645-.869L9.594 3.94ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+    </svg>
   )
 };
 
@@ -460,7 +465,48 @@ export default function App() {
   const [dailyReviews, setDailyReviews] = useState<DailyReviews>(() => {
     try { return JSON.parse(localStorage.getItem("sprint_reviews") || "{}"); } catch { return {}; }
   });
-  const [startDate] = useState(() => localStorage.getItem("sprint_start") || (() => { const d = today(); localStorage.setItem("sprint_start", d); return d; })());
+  const [startDate, setStartDate] = useState(() => localStorage.getItem("sprint_start") || (() => { const d = today(); localStorage.setItem("sprint_start", d); return d; })());
+  
+  const [targetHours, setTargetHours] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_target_hours");
+      return saved !== null ? Number(saved) : 100;
+    } catch {
+      return 100;
+    }
+  });
+  const [sprintDuration, setSprintDuration] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("sprint_duration");
+      return saved !== null ? Number(saved) : 10;
+    } catch {
+      return 10;
+    }
+  });
+
+  const [showGoalSettings, setShowGoalSettings] = useState(false);
+  const [tempStartDate, setTempStartDate] = useState(startDate);
+  const [tempTargetHours, setTempTargetHours] = useState(targetHours);
+  const [tempSprintDuration, setTempSprintDuration] = useState(sprintDuration);
+
+  const openGoalSettings = () => {
+    setTempStartDate(startDate);
+    setTempTargetHours(targetHours);
+    setTempSprintDuration(sprintDuration);
+    setShowGoalSettings(true);
+  };
+
+  const handleSaveGoalSettings = () => {
+    if (!tempStartDate) return;
+    if (tempTargetHours <= 0 || tempSprintDuration <= 0) return;
+    setStartDate(tempStartDate);
+    setTargetHours(tempTargetHours);
+    setSprintDuration(tempSprintDuration);
+    localStorage.setItem("sprint_start", tempStartDate);
+    localStorage.setItem("sprint_target_hours", String(tempTargetHours));
+    localStorage.setItem("sprint_duration", String(tempSprintDuration));
+    setShowGoalSettings(false);
+  };
 
   // Session form
   const [form, setForm] = useState<Omit<Session, "id" | "duration">>({ date: today(), start: "", end: "", project: "", desc: "", cat: "Video Editing" });
@@ -783,11 +829,11 @@ export default function App() {
 
   const totalHrs = sessions.reduce((a, s) => a + s.duration, 0);
   const doneHrs = +totalHrs.toFixed(2);
-  const remHrs = +(100 - doneHrs).toFixed(2);
-  const pct = Math.min(100, Math.round(doneHrs));
+  const remHrs = +(targetHours - doneHrs).toFixed(2);
+  const pct = Math.min(100, Math.round((doneHrs / targetHours) * 100));
 
   const daysSince = Math.max(1, Math.ceil((Date.now() - new Date(startDate).getTime()) / (1000 * 86400)));
-  const daysLeft = Math.max(0, 10 - daysSince + 1);
+  const daysLeft = Math.max(0, sprintDuration - daysSince + 1);
   const avgPerDay = +(doneHrs / Math.max(1, daysSince - 1 + (daysSince === 1 ? 0.5 : 0))).toFixed(2);
   const reqPace = daysLeft > 0 ? +(remHrs / daysLeft).toFixed(2) : 0;
 
@@ -804,7 +850,7 @@ export default function App() {
   })();
 
   const motivation = doneHrs === 0 ? "Start your first session — every hour compounds."
-    : doneHrs >= 100 ? "MISSION COMPLETE! You did it!"
+    : doneHrs >= targetHours ? "MISSION COMPLETE! You did it!"
     : avgPerDay >= reqPace ? "You're ahead of schedule. Keep this pace!"
     : `You need ${reqPace} hrs/day to finish on time. Focus now!`;
 
@@ -1235,7 +1281,7 @@ export default function App() {
                     <Icons.Sparkles />
                     <span>Challenge Tracker</span>
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400">Scout view: Live progress of Divy's 100-hour sprint.</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400">Scout view: Live progress of Divy's {targetHours}-hour sprint.</p>
                 </div>
                 <div className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-ring" />
@@ -1339,12 +1385,12 @@ export default function App() {
               </div>
 
 
-              {/* 10-Day Productivity Heatmap */}
+              {/* Productivity Heatmap */}
               {dayData.length > 0 && (
                 <div className="space-y-3 border-t border-slate-200 dark:border-zinc-800/80 pt-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Activity Heatmap</h3>
                   <div className="flex gap-2 flex-wrap">
-                    {Array.from({ length: 10 }, (_, i) => {
+                    {Array.from({ length: sprintDuration }, (_, i) => {
                       const d = new Date(startDate); d.setDate(d.getDate() + i);
                       const ds = d.toISOString().slice(0, 10);
                       const hrs = dayMap[ds]?.hrs || 0;
@@ -1429,7 +1475,14 @@ export default function App() {
             </div>
             <div>
               <div className="text-sm font-bold text-slate-900 dark:text-zinc-50 tracking-tight">Compound</div>
-              <div className="text-[10px] text-slate-400 dark:text-zinc-500">100 Hours in 10 Days</div>
+              <div 
+                onClick={openGoalSettings}
+                className="text-[10px] text-slate-400 hover:text-blue-500 dark:text-zinc-500 dark:hover:text-blue-400 cursor-pointer flex items-center gap-1 transition-colors select-none"
+                title="Edit Goal Configuration"
+              >
+                <span>{targetHours} Hours in {sprintDuration} Days</span>
+                <span className="scale-75 origin-left inline-block"><Icons.Settings /></span>
+              </div>
             </div>
           </div>
 
@@ -1540,7 +1593,7 @@ export default function App() {
                 <div>
                   <div className="flex justify-between text-xs font-semibold mb-2">
                     <span className="text-slate-600 dark:text-zinc-400">Overall Progress</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-bold">{doneHrs} / 100 hrs</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-bold">{doneHrs} / {targetHours} hrs</span>
                   </div>
                   <div className="h-2.5 bg-slate-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-[1000ms] ease-out bg-blue-600" style={{ width: `${pct}%` }} />
@@ -1548,7 +1601,13 @@ export default function App() {
                 </div>
 
                 <div className="pt-2 space-y-2.5">
-                  {[10, 25, 50, 75, 100].map((m) => {
+                  {[...new Set([
+                    Math.round(targetHours * 0.1),
+                    Math.round(targetHours * 0.25),
+                    Math.round(targetHours * 0.5),
+                    Math.round(targetHours * 0.75),
+                    targetHours
+                  ].map(v => Math.max(1, v)))].map((m) => {
                     const achieved = doneHrs >= m;
                     return (
                       <div key={m} className="flex items-center gap-3">
@@ -1994,9 +2053,9 @@ export default function App() {
             {/* Heatmap */}
             {dayData.length > 0 && (
               <div className={`${glassCard} p-6 animate-scale-up opacity-0`} style={{ animationDelay: "480ms" }}>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-300 mb-4">Productivity Heatmap (10-day sprint)</h3>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-300 mb-4">Productivity Heatmap ({sprintDuration}-day sprint)</h3>
                 <div className="flex gap-2 flex-wrap">
-                  {Array.from({ length: 10 }, (_, i) => {
+                  {Array.from({ length: sprintDuration }, (_, i) => {
                     const d = new Date(startDate); d.setDate(d.getDate() + i);
                     const ds = d.toISOString().slice(0, 10);
                     const hrs = dayMap[ds]?.hrs || 0;
@@ -2076,6 +2135,74 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {showGoalSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className={`${glassCard} w-full max-w-md p-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xl space-y-4`}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50 flex items-center gap-2">
+                <Icons.Settings />
+                Goal Configuration
+              </h3>
+              <button 
+                onClick={() => setShowGoalSettings(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Sprint Start Date</label>
+                <input 
+                  type="date"
+                  value={tempStartDate}
+                  onChange={e => setTempStartDate(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Target Hours</label>
+                <input 
+                  type="number"
+                  min="1"
+                  value={tempTargetHours}
+                  onChange={e => setTempTargetHours(Number(e.target.value))}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Sprint Duration (Days)</label>
+                <input 
+                  type="number"
+                  min="1"
+                  value={tempSprintDuration}
+                  onChange={e => setTempSprintDuration(Number(e.target.value))}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button 
+                onClick={() => setShowGoalSettings(false)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 text-slate-800 dark:text-zinc-200 rounded-xl py-2.5 text-sm font-semibold transition-all cursor-pointer text-center"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveGoalSettings}
+                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2.5 text-sm font-semibold transition-all cursor-pointer text-center shadow-xs"
+              >
+                Save Goal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
